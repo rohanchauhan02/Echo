@@ -101,6 +101,11 @@ func mainAdmin(c echo.Context) error {
 func mainCookie(c echo.Context) error {
 	return c.String(http.StatusOK, "you are on the yet secret page.")
 }
+func mainJwt(c echo.Context)error{
+	return c.String(http.StatusOK,"you are on the top secret jwt page")
+}
+
+
 func login(c echo.Context) error{
 	username:=c.QueryParam("username")
 	password:=c.QueryParam("password")
@@ -175,6 +180,7 @@ func main() {
 	// e.Use(ServerHeader)
 	adminGroup := e.Group("/admin")
 	cookieGroup:=e.Group("/cookie")
+	jwtGroup:=e.Group("/jwt")
 	adminGroup.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
 		Format: "method=${method}, uri=${uri}, status=${status}\n",
 	}))
@@ -185,9 +191,20 @@ func main() {
 		}
 		return false,nil
 	}))
+	jwtGroup.Use(middleware.JWTWithConfig(middleware.JWTConfig{
+		SigningMethod: "HS512",
+		SigningKey: []byte("mySecret"),
+	}))
+
+
+	cookieGroup.Use(checkCookie)
 	adminGroup.GET("/main", mainAdmin)
 	cookieGroup.GET("/main",mainCookie)
-	cookieGroup.Use(checkCookie)
+	
+	jwtGroup.GET("/main",mainJwt)
+
+
+
 	e.GET("/login",login)
 	e.GET("/", hello)
 	e.GET("/cats", getCats)
